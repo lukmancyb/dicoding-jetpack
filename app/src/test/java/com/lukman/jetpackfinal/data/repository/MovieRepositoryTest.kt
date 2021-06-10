@@ -14,6 +14,7 @@ import junit.framework.Assert.assertEquals
 import org.junit.Assert
 import org.junit.Rule
 import org.junit.Test
+import org.mockito.Mock
 import org.mockito.Mockito
 import org.mockito.Mockito.mock
 
@@ -25,40 +26,29 @@ class MovieRepositoryTest {
     var instantTaskExcecutorRule = InstantTaskExecutorRule()
 
 
-    private val remoteDataSource = mock(RemoteDataSource::class.java)
     private val localDataSource = mock(LocalDataSource::class.java)
+
+    private val remoteDataSource = mock(RemoteDataSource::class.java)
 
     private val movieRepository = FakeMovieRepository(remoteDataSource, localDataSource)
 
     private val movieResponse = DummyData.generateRemoteDummyMovies()
 
 
-//    @Test
-//    fun getMovies() {
-//        val dataSourceFactory = mock(DataSource.Factory::class.java) as DataSource.Factory<Int, MovieEntity>
-//        Mockito.`when`(localDataSource.getMovies()).thenReturn(dataSourceFactory)
-//        movieRepository.getNowPlayingMovies()
-//
-//        val movieEntities = Resource.Success(PagedListUtil.mockPagedList(DummyData.generateDummyMovies()))
-//        verify(localDataSource).getMovies()
-//        Assert.assertNotNull(movieEntities.data)
-//        Assert.assertEquals(movieResponse.size.toLong(), movieEntities.data.size.toLong())
-//
-//    }
-
     @Test
     fun getMovies() {
-        val dataSourceFactory =
-            mock(DataSource.Factory::class.java) as DataSource.Factory<Int, MovieEntity>
+        val dataSourceFactory = mock(DataSource.Factory::class.java) as DataSource.Factory<Int, MovieEntity>
         Mockito.`when`(localDataSource.getMovies()).thenReturn(dataSourceFactory)
         movieRepository.getNowPlayingMovies()
 
-        val movieEntities =
-            Resource.Success(PagedListUtil.mockPagedList(DummyData.generateDummyMovies()))
+        val movieEntities = Resource.Success(PagedListUtil.mockPagedList(DummyData.generateDummyMovies()))
         verify(localDataSource).getMovies()
         Assert.assertNotNull(movieEntities.data)
-        assertEquals(movieResponse.size, movieEntities.data.size)
+        Assert.assertEquals(movieResponse.size.toLong(), movieEntities.data.size.toLong())
+
     }
+
+
 
 
 }
