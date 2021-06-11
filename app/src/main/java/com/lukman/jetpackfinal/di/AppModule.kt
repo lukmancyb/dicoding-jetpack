@@ -6,6 +6,8 @@ import com.lukman.jetpackfinal.data.source.local.LocalDataSource
 import com.lukman.jetpackfinal.data.source.local.database.MovieDao
 import com.lukman.jetpackfinal.data.source.local.database.MyDatabase
 import com.lukman.jetpackfinal.data.source.remote.RemoteDataSource
+import com.lukman.jetpackfinal.data.source.remote.network.ApiHelper
+import com.lukman.jetpackfinal.data.source.remote.network.ApiHelperImpl
 import com.lukman.jetpackfinal.data.source.remote.network.ApiServices
 import dagger.Module
 import dagger.Provides
@@ -20,9 +22,14 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object AppModule {
 
+
     @Singleton
     @Provides
-    fun provideRemoteDataSource(apiServices: ApiServices) = RemoteDataSource(apiServices)
+    fun provideApiHelper(apiHelper : ApiHelperImpl) : ApiHelper = apiHelper
+
+    @Singleton
+    @Provides
+    fun provideRemoteDataSource(apiHelper: ApiHelper) = RemoteDataSource(apiHelper)
 
 
     @Singleton

@@ -45,7 +45,7 @@ class MoviesFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         setupRecyclerView()
-        viewModel.movieData.observe(viewLifecycleOwner) { result ->
+        viewModel.loadMovies().observe(viewLifecycleOwner) { result ->
             when (result) {
                 is Resource.Success -> {
                     binding.progressBar.isVisible = false
@@ -55,7 +55,7 @@ class MoviesFragment : Fragment() {
                 is Resource.Error -> {
                     binding.progressBar.isVisible = false
 
-                    e(TAG, result.message)
+                    e(TAG, result.message ?: "")
                 }
 
                 is Resource.Loading -> {

@@ -11,4 +11,5 @@ import kotlinx.coroutines.flow.Flow
 interface MoviesDataSource {
 
      fun getNowPlayingMovies() : LiveData<Resource<PagedList<MovieEntity>>>
+
 }

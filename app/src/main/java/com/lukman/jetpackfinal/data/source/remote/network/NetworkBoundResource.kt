@@ -1,43 +1,77 @@
 package com.lukman.jetpackfinal.data.source.remote.network
 
 import androidx.lifecycle.LiveData
+import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.asLiveData
 import com.lukman.jetpackfinal.vo.Resource
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 
-abstract class NetworkBoundResource<ResultType, RequestType>() {
+abstract class NetworkBoundResource<ResultType, RequestType> {
 
+    private val result = MediatorLiveData<Resource<ResultType>>()
 
-    private val result : Flow<Resource<ResultType>> = flow {
-        emit(Resource.Loading)
-        val dbSource = loadFromDB().first()
-        if (shouldFetch(dbSource)){
-            emit(Resource.Loading)
-            when(val apiResponse = createCall().first()){
-                is ApiResponse.Success -> {
-                    saveCallResult(apiResponse.data)
-                    emitAll(loadFromDB().map { Resource.Success(it) })
+    init {
+        result.value = Resource.Loading()
+        @Suppress("LeakingThis")
+        val dbSource = loadFromDB()
+        result.addSource(dbSource) {
+            result.removeSource(dbSource)
+            if (shouldFetch(it)) {
+                CoroutineScope(Dispatchers.Main).launch {
+                    fetchFromNetwork(dbSource)
                 }
-                is ApiResponse.Failure -> {
-                    onFetchFailed()
-                    emit(Resource.Error(apiResponse.message ?: ""))
+            } else {
+                result.addSource(dbSource) { newData ->
+                    result.value = Resource.Success(newData)
                 }
             }
-        }else{
-            emitAll(loadFromDB().map { Resource.Success(it) })
         }
     }
 
-    private fun onFetchFailed() {}
+    protected open fun onFetchFailed() {}
 
-    protected abstract suspend fun loadFromDB(): Flow<ResultType>
+    protected abstract fun loadFromDB(): LiveData<ResultType>
+
     protected abstract fun shouldFetch(data: ResultType?): Boolean
 
-    protected abstract suspend fun createCall(): Flow<ApiResponse<RequestType>>
+    protected abstract suspend fun createCall(): LiveData<ApiResponse<RequestType>>
 
-    protected abstract suspend fun saveCallResult(data: RequestType?)
+    protected abstract suspend fun saveCallResult(data: RequestType)
 
-    fun asLiveData() : LiveData<Resource<ResultType>> = result.asLiveData()
+    private suspend fun fetchFromNetwork(dbSource: LiveData<ResultType>) {
 
+        val apiResponse = createCall()
 
+        result.addSource(dbSource) {
+            result.value = Resource.Loading()
+        }
+        result.addSource(apiResponse) { response ->
+            result.removeSource(apiResponse)
+            result.removeSource(dbSource)
+            when (response) {
+                is ApiResponse.Success ->
+                    CoroutineScope(Dispatchers.IO).launch {
+                        response.data?.let { saveCallResult(it) }
+                        CoroutineScope(Dispatchers.Main).launch {
+                            result.addSource(loadFromDB()) { newData ->
+                                result.value = Resource.Success(newData)
+                            }
+                        }
+                    }
+
+                is ApiResponse.Failure -> {
+                    onFetchFailed()
+                    result.addSource(dbSource) { newData ->
+                        result.value = Resource.Error(response.message ?: "")
+                    }
+                }
+            }
+        }
+    }
+
+    fun toLiveData(): LiveData<Resource<ResultType>> = result
 }

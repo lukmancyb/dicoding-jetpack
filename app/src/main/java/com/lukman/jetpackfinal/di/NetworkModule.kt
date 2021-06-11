@@ -3,6 +3,8 @@ package com.lukman.jetpackfinal.di
 import com.lukman.jetpackfinal.Constants.API_KEY
 import com.lukman.jetpackfinal.Constants.BASE_URL
 import com.lukman.jetpackfinal.data.source.remote.RemoteDataSource
+import com.lukman.jetpackfinal.data.source.remote.network.ApiHelper
+import com.lukman.jetpackfinal.data.source.remote.network.ApiHelperImpl
 import com.lukman.jetpackfinal.data.source.remote.network.ApiServices
 import dagger.Module
 import dagger.Provides
@@ -64,6 +66,8 @@ object NetworkModule {
         .addConverterFactory(GsonConverterFactory.create())
         .build()
         .create(ApiServices::class.java)
+
+
 
 
 }

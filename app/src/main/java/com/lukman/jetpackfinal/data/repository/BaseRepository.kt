@@ -26,7 +26,7 @@ abstract class BaseRepository {
                     )
                 }
                 else -> {
-                    emit(ApiResponse.Failure(true, null, null))
+                    emit(ApiResponse.Failure(true, null, null, thorwable.localizedMessage))
                 }
             }
         }
